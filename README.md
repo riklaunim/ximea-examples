@@ -2,6 +2,9 @@
 
 Ximea cameras Python and IronPython API usage examples. Based on a USB 3.1 mono camera.
 
+**Tutorial**: https://rk.edu.pl/en/scripting-ximea-machine-vision-applications-python-flask-and-pyqt/
+
+
 PyQt5
 -----
 Simple application capable of previewing an image from a Ximea camera (mono by default)
