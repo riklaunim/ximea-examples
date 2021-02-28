@@ -2,3 +2,6 @@ pillow
 numpy
 pytest
 pytest-qt
+
+flask
+jinja2
