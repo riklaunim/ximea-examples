@@ -11,6 +11,21 @@ import app as viewer
 from cameras import ximea
 
 
+class RecordingWorker(QtCore.QObject):
+    finished = QtCore.pyqtSignal()
+    progress = QtCore.pyqtSignal(int)
+
+    frames_to_capture = 0
+    camera = None
+
+    def run(self):
+        for i in range(self.frames_to_capture):
+            image = self.camera.get_frame()
+            image.save('frames/%d.bmp' % i)
+            self.progress.emit(i + 1)
+        self.finished.emit()
+
+
 class Recorder(QtWidgets.QMainWindow, viewer.Ui_xCapture):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -55,7 +70,27 @@ class Recorder(QtWidgets.QMainWindow, viewer.Ui_xCapture):
         self.captureValue.setText(str(frame_count))
 
     def _start_capture(self):
-        print('START')
+        self.preview_timer.stop()
+        task = self._get_recording_task()
+        task.start()
+
+    def _get_recording_task(self):
+        self.thread = QtCore.QThread()
+        self.recorder = RecordingWorker()
+        self.recorder.frames_to_capture = self.frameCounter.value()
+        self.recorder.camera = self.camera
+        self.recorder.moveToThread(self.thread)
+        self.thread.started.connect(self.recorder.run)
+        self.recorder.finished.connect(self.thread.quit)
+        self.recorder.finished.connect(self.recorder.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.finished.connect(
+            lambda: self.preview_timer.start()
+        )
+        self.recorder.progress.connect(
+            lambda progress: self.statusbar.showMessage("Captured: %d" % progress)
+        )
+        return self.thread
 
     def _render_preview(self):
         raw = self.camera.get_frame()
